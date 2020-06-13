@@ -24,7 +24,7 @@ type DagSource struct {
 }
 
 type Dag struct {
-	Id       string
+	ID       string
 	Source   *DagSource
 	Schedule cron.Schedule
 }
@@ -99,7 +99,7 @@ func LoadFromTaskDir() ([]*Dag, error) {
 	}
 
 	if len(dags) == 0 {
-		return nil, fmt.Errorf("no dags found.")
+		return nil, fmt.Errorf("no dags found")
 	}
 
 	return dags, nil

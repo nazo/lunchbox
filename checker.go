@@ -47,8 +47,8 @@ func CheckerKey(prefix string) string {
 	return fmt.Sprintf("%s:running", prefix)
 }
 
-func (s *BasicChecker) SetKeyPrefix(prefix string) {
-	s.keyPrefix = prefix
+func (c *BasicChecker) SetKeyPrefix(prefix string) {
+	c.keyPrefix = prefix
 }
 
 func buildCloudWatchLogStreamName(containerDef *ecs.ContainerDefinition, task *ecs.Task) string {
@@ -85,11 +85,11 @@ func (c *BasicChecker) watchTask(ctx context.Context, taskRun *TaskRun) {
 		return
 	}
 	if *describeTasksOutput.Tasks[0].LastStatus != "STOPPED" {
-		taskRunJson, err := json.Marshal(taskRun)
+		taskRunJSON, err := json.Marshal(taskRun)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		err = c.redisClient.RPush(ctx, CheckerKey(c.keyPrefix), taskRunJson).Err()
+		err = c.redisClient.RPush(ctx, CheckerKey(c.keyPrefix), taskRunJSON).Err()
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -138,14 +138,14 @@ func (c *BasicChecker) Start(ctx context.Context, dags []*Dag) {
 	defer ticker.Stop()
 	for range ticker.C {
 		for {
-			taskJson, err := c.redisClient.LPop(ctx, CheckerKey(c.keyPrefix)).Result()
+			taskJSON, err := c.redisClient.LPop(ctx, CheckerKey(c.keyPrefix)).Result()
 			if err == redis.Nil {
 				break
 			} else if err != nil {
 				log.Fatalln(err)
 			}
 			taskRun := &TaskRun{}
-			err = json.Unmarshal([]byte(taskJson), taskRun)
+			err = json.Unmarshal([]byte(taskJSON), taskRun)
 			if err != nil {
 				log.Fatalln(err)
 			}

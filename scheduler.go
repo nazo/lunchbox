@@ -66,7 +66,7 @@ func (s *BasicScheduler) Start(ctx context.Context, dags []*Dag) {
 	for range ticker.C {
 		now := time.Now().Truncate(time.Minute)
 		for _, dag := range dags {
-			lastTimeString, err := s.redisClient.GetSet(ctx, SchedulerKey(s.keyPrefix, dag.Id), now.Format(time.RFC3339)).Result()
+			lastTimeString, err := s.redisClient.GetSet(ctx, SchedulerKey(s.keyPrefix, dag.ID), now.Format(time.RFC3339)).Result()
 			if err == redis.Nil {
 				continue
 			} else if err != nil {
@@ -81,15 +81,15 @@ func (s *BasicScheduler) Start(ctx context.Context, dags []*Dag) {
 				log.Fatalln(err)
 			}
 			for _, actionTime := range actionTimes {
-				taskJson, err := json.Marshal(&NextTask{
+				taskJSON, err := json.Marshal(&NextTask{
 					Time:   *actionTime,
-					DagID:  dag.Id,
+					DagID:  dag.ID,
 					TaskID: uuid.New().String(),
 				})
 				if err != nil {
 					log.Fatalln(err)
 				}
-				err = s.redisClient.LPush(ctx, WorkerKey(s.keyPrefix), taskJson).Err()
+				err = s.redisClient.LPush(ctx, WorkerKey(s.keyPrefix), taskJSON).Err()
 				if err != nil {
 					log.Fatalln(err)
 				}

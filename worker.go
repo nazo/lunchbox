@@ -56,8 +56,8 @@ func NewWorker(notifiers []notifier.Notifier, redisClient *redis.Client, ecsServ
 	}
 }
 
-func (s *BasicWorker) SetKeyPrefix(prefix string) {
-	s.keyPrefix = prefix
+func (w *BasicWorker) SetKeyPrefix(prefix string) {
+	w.keyPrefix = prefix
 }
 
 func (w *BasicWorker) runTask(ctx context.Context, dag *Dag) {
@@ -104,23 +104,23 @@ func (w *BasicWorker) runTask(ctx context.Context, dag *Dag) {
 	taskRun := &TaskRun{
 		TaskDefinition: describeTaskDefinitionsOutput.TaskDefinition,
 		Task:           runTaskOutput.Tasks[0],
-		dagID:          dag.Id,
+		dagID:          dag.ID,
 	}
 	fmt.Printf("%+v\n", taskRun)
 
-	taskRunJson, err := json.Marshal(taskRun)
+	taskRunJSON, err := json.Marshal(taskRun)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = w.redisClient.RPush(ctx, CheckerKey(w.keyPrefix), taskRunJson).Err()
+	err = w.redisClient.RPush(ctx, CheckerKey(w.keyPrefix), taskRunJSON).Err()
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
 
-func findDagById(dags []*Dag, ID string) *Dag {
+func findDagByID(dags []*Dag, ID string) *Dag {
 	for _, dag := range dags {
-		if dag.Id == ID {
+		if dag.ID == ID {
 			return dag
 		}
 	}
@@ -133,14 +133,14 @@ func (w *BasicWorker) StartWorker(ctx context.Context, dags []*Dag) {
 	defer ticker.Stop()
 	for range ticker.C {
 		for {
-			taskJson, err := w.redisClient.RPopLPush(ctx, WorkerKey(w.keyPrefix), BackupKey(w.keyPrefix)).Result()
+			taskJSON, err := w.redisClient.RPopLPush(ctx, WorkerKey(w.keyPrefix), BackupKey(w.keyPrefix)).Result()
 			if err == redis.Nil {
 				break
 			} else if err != nil {
 				log.Fatalln(err)
 			}
 			task := &NextTask{}
-			err = json.Unmarshal([]byte(taskJson), task)
+			err = json.Unmarshal([]byte(taskJSON), task)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -148,7 +148,7 @@ func (w *BasicWorker) StartWorker(ctx context.Context, dags []*Dag) {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			dag := findDagById(dags, task.DagID)
+			dag := findDagByID(dags, task.DagID)
 			w.runTask(ctx, dag)
 		}
 	}
