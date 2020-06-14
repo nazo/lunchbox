@@ -17,5 +17,5 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
     - run: diff -u <(echo -n) <(gofmt -d ./)
-    - run: go get honnef.co/go/tools/cmd/staticcheck && $GOPATH/bin/staticcheck github.com/nazo/lunchbox
+    - run: go get honnef.co/go/tools/cmd/staticcheck && staticcheck github.com/nazo/lunchbox
     - run: go test ./...
