@@ -12,6 +12,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/slack-go/slack v0.6.5
 	gopkg.in/yaml.v2 v2.3.0
-	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc
+	honnef.co/go/tools v0.0.1-2020.1.4
 	sigs.k8s.io/yaml v1.2.0
 )

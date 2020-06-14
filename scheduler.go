@@ -10,6 +10,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/nazo/lunchbox/notifier"
+	"github.com/robfig/cron"
 )
 
 type Scheduler interface {
@@ -38,18 +39,18 @@ func NewScheduler(notifiers []notifier.Notifier, redisClient *redis.Client) Sche
 	}
 }
 
-func GetNextActionTimes(dag *Dag, lastTime *time.Time, currentTime *time.Time) ([]*time.Time, error) {
+func getNextActionTimes(schedule cron.Schedule, lastTime *time.Time, currentTime *time.Time) []*time.Time {
 	var times []*time.Time
 	checkTime := *lastTime
 	for {
-		nextTime := dag.Schedule.Next(checkTime)
+		nextTime := schedule.Next(checkTime)
 		if nextTime.After(*currentTime) {
 			break
 		}
 		times = append(times, &nextTime)
 		checkTime = nextTime
 	}
-	return times, nil
+	return times
 }
 
 func SchedulerKey(prefix string, dagID string) string {
@@ -76,10 +77,7 @@ func (s *BasicScheduler) Start(ctx context.Context, dags []*Dag) {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			actionTimes, err := GetNextActionTimes(dag, &lastTime, &now)
-			if err != nil {
-				log.Fatalln(err)
-			}
+			actionTimes := getNextActionTimes(dag.Schedule, &lastTime, &now)
 			for _, actionTime := range actionTimes {
 				taskJSON, err := json.Marshal(&NextTask{
 					Time:   *actionTime,
